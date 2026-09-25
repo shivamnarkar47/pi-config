@@ -1,0 +1,16 @@
+{
+  "lastChangelogVersion": "0.87.1",
+  "theme": "dark",
+  "packages": [
+    "npm:pi-herdsman",
+    "npm:@marshal/pi-turn-stats",
+    "npm:@xynogen/pix-optimizer",
+    "git:github.com/DietrichGebert/ponytail"
+  ],
+  "defaultTools": [
+    "read",
+    "powershell",
+    "edit",
+    "write"
+  ]
+}

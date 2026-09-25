@@ -1,0 +1,16 @@
+# Never ship credentials or machine-local state.
+auth.json
+agent/auth.json
+agent/models-store.json
+agent/trust.json
+agent/sessions/
+agent/npm/
+agent/git/
+agent/bin/
+agent/pi-herdsman/
+agent/skills/
+*.bak-*
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
