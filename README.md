@@ -6,26 +6,27 @@ Windows-first, PowerShell-first. No secrets — the API key in `models.json` is 
 
 ## Install
 
-Any Python 3.9+ works:
+Any Python 3.9+ works, on Windows, macOS and Linux:
 
 ```sh
 git clone https://github.com/shivamnarkar47/pi-config.git
 cd pi-config
-python install.py
+python3 install.py        # or: python install.py on Windows, ./install.py
 ```
 
 No system Python? [`uv`](https://docs.astral.sh/uv/) works too: `uv run install.py`.
 
 ```
-python install.py                       # install into ~/.pi/agent
-python install.py --agent-dir /tmp/pi   # install somewhere else (handy for testing)
-python install.py --dry-run             # show what would change, write nothing
-python install.py --list                # list what this config ships
-python install.py --force               # overwrite without keeping a backup
-python install.py --apply-patches       # also re-apply the npm package patches (needs node)
+python3 install.py                    # install into the agent dir
+python3 install.py --agent-dir /tmp/pi # install somewhere else (handy for testing)
+python3 install.py --dry-run          # show what would change, write nothing
+python3 install.py --list             # list what this config ships
+python3 install.py --force            # overwrite without keeping a backup
+python3 install.py --shell bash       # force the shell tool instead of auto-detecting
+python3 install.py --apply-patches    # also re-apply the npm package patches (needs node)
 ```
 
-Then start pi, or run `/reload` in a session that is already open. Existing files are backed up as `<name>.bak-<timestamp>` unless you pass `--force`.
+The target directory defaults to `$PI_CODING_AGENT_DIR` when that is set, otherwise `~/.pi/agent` — the same resolution pi itself uses. Then start pi, or run `/reload` in a session that is already open. Existing files are backed up as `<name>.bak-<timestamp>` unless you pass `--force`.
 
 ## What gets installed
 
@@ -52,16 +53,31 @@ From `settings.json` → `packages`; pi installs and updates these itself on the
 
 `background-shell.ts` (above) is not a package — it is a local extension shipped in this repo.
 
-## PowerShell is the default shell
+## Shell tool: PowerShell on Windows, bash elsewhere
 
-`settings.json` sets `defaultTools: ["read", "powershell", "edit", "write"]`, which is what pi's own [Windows guide](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) recommends. The `bash` tool is deliberately **not** enabled: on Windows without Git for Windows, pi resolves it to the WSL stub `C:\Windows\System32\bash.exe`, so commands end up running in WSL instead of PowerShell.
+The repo's `settings.json` ships the Windows set `defaultTools: ["read", "powershell", "edit", "write"]`, which is what pi's own Windows guide recommends. The installer rewrites that one entry for the machine it runs on — `bash` in place of `powershell` on macOS/Linux, because pi's `powershell` tool only exists on Windows and would fail on every call. It says so when it does:
 
-Two things to know:
+```
+~ adapting settings.json defaultTools: powershell -> bash
+Shell tool: bash
+  resolved by pi: /bin/bash, else bash on PATH
+```
 
+Override with `--shell powershell` or `--shell bash`, or pass `--shell keep` to install `settings.json` byte-for-byte.
+
+Two more things worth knowing:
+
+- On Windows the `bash` tool is deliberately *not* enabled: without Git for Windows, pi resolves it to the WSL stub `C:\Windows\System32\bash.exe`, so commands would run in WSL instead of PowerShell.
 - `defaultTools` is a *startup* set. `pi -t read,grep,find,ls --print "…"` overrides it for one run, and an extension can call `setActiveTools()` at runtime.
-- On Linux/macOS, swap `powershell` for `bash` in `defaultTools` (the `powershell` tool only exists on Windows) and re-run the installer.
 
 `install.py` prints the resolved shell tool after installing, so you always see which one you ended up with.
+
+## Linux and macOS notes
+
+- The installer is stdlib-only Python 3.9+ and has no Windows-specific code: paths are handled with `pathlib`, and output always uses `/` separators.
+- The `bash` tool is what `background-shell.ts` attaches to on these platforms, so Ctrl+B and `/background` work there too.
+- `--apply-patches` needs `node` on `PATH` (pi itself is an npm package, so you will have it). It patches `<agent-dir>/npm/node_modules/@marshal/pi-turn-stats/extensions/turn-stats.ts` — the file only exists after pi has installed its packages, so run it once more after the first start if it reports "not present yet".
+- `models.json` providers are plain HTTP endpoints (`127.0.0.1:18731` for command-code, `localhost:8080` for llama.cpp); the local ones need those servers running on the same host.
 
 ## Not installed (and why)
 
